@@ -24,38 +24,59 @@ log = logging.getLogger(__name__)
 def _detect_provider() -> tuple[str, str, str]:
     """Return (base_url, model, api_key) based on environment variables.
 
-    Reads env at call time (not module import time) so that load_env() called
-    in _bootstrap() is always visible here.
+    Supports:
+      - Custom OpenAI-compatible endpoints via OPENAI_BASE_URL, LLM_BASE_URL, or LLM_URL
+        (e.g., DeepSeek, Groq, OpenRouter, Together AI, Ollama, LM Studio, vLLM, LiteLLM)
+      - Google Gemini via GEMINI_API_KEY
+      - OpenAI via OPENAI_API_KEY
     """
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    openai_key = os.environ.get("OPENAI_API_KEY", "")
-    local_url = os.environ.get("LLM_URL", "")
-    model_override = os.environ.get("LLM_MODEL", "")
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    llm_key = (
+        os.environ.get("LLM_API_KEY", "").strip()
+        or os.environ.get("DEEPSEEK_API_KEY", "").strip()
+        or os.environ.get("GROQ_API_KEY", "").strip()
+    )
 
-    if gemini_key and not local_url:
+    base_url = (
+        os.environ.get("OPENAI_BASE_URL", "").strip()
+        or os.environ.get("LLM_BASE_URL", "").strip()
+        or os.environ.get("LLM_URL", "").strip()
+    )
+    model_override = (
+        os.environ.get("LLM_MODEL", "").strip()
+        or os.environ.get("OPENAI_MODEL", "").strip()
+    )
+
+    # 1. Custom OpenAI-compatible endpoint (DeepSeek, Groq, OpenRouter, Together AI, Ollama, vLLM, LM Studio, etc.)
+    if base_url:
+        key = llm_key or openai_key or gemini_key or "not-needed"
+        url = base_url.rstrip("/")
+        return (
+            url,
+            model_override or "gpt-4o-mini",
+            key,
+        )
+
+    # 2. Google Gemini API
+    if gemini_key:
         return (
             "https://generativelanguage.googleapis.com/v1beta/openai",
             model_override or "gemini-2.0-flash",
             gemini_key,
         )
 
-    if openai_key and not local_url:
+    # 3. Standard OpenAI API
+    if openai_key or llm_key:
         return (
             "https://api.openai.com/v1",
             model_override or "gpt-4o-mini",
-            openai_key,
-        )
-
-    if local_url:
-        return (
-            local_url.rstrip("/"),
-            model_override or "local-model",
-            os.environ.get("LLM_API_KEY", ""),
+            openai_key or llm_key,
         )
 
     raise RuntimeError(
         "No LLM provider configured. "
-        "Set GEMINI_API_KEY, OPENAI_API_KEY, or LLM_URL in your environment."
+        "Set GEMINI_API_KEY, OPENAI_API_KEY, LLM_API_KEY, or OPENAI_BASE_URL/LLM_URL in your environment."
     )
 
 

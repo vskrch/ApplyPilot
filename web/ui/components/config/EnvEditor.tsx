@@ -135,13 +135,13 @@ export function EnvEditor() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-[var(--text-secondary)] mb-1">
-              Local LLM URL
+              Custom OpenAI-Compatible API URL (DeepSeek, Groq, OpenRouter, Ollama, LM Studio, vLLM)
             </label>
             <input
               type="text"
               value={formData.llm_url}
               onChange={(e) => setFormData({ ...formData, llm_url: e.target.value })}
-              placeholder="e.g., http://localhost:11434"
+              placeholder="e.g. https://api.deepseek.com/v1, https://api.groq.com/openai/v1, or http://localhost:11434/v1"
               className="input w-full"
             />
           </div>
