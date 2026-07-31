@@ -180,6 +180,8 @@ export interface MatchJob {
   url: string;
   posting_date: string | null;
   username: string | null;
+  platform?: string | null;
+  site?: string | null;
 }
 
 export interface MatchJobsResponse {
