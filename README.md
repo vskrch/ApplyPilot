@@ -95,21 +95,26 @@ applypilot run
 applypilot apply
 ```
 
-### Web UI (New)
+### Web UI (Full Stack SaaS Control Center)
 
 ```bash
-# Install web dependencies
-pip install applypilot[web]
-cd web/ui && npm install
+# Option 1: Start full stack concurrently (API + Web UI) using dev script
+bash web/scripts/dev.sh
 
-# Launch the web UI
+# Option 2: Launch via ApplyPilot CLI
 applypilot web
 
-# Or start servers manually
-cd web/scripts && bash dev.sh
+# Option 3: Run API & UI separately in two terminal tabs
+# Tab 1 (FastAPI Backend on port 8000):
+bash web/scripts/dev-api.sh
+
+# Tab 2 (Next.js SaaS UI on port 3000):
+bash web/scripts/dev-ui.sh
+# or: cd web/ui && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the UI, [http://localhost:8000/docs](http://localhost:8000/docs) for the API docs.
+Open [http://localhost:3000](http://localhost:3000) for the SaaS Web UI Control Center and [http://localhost:8000/docs](http://localhost:8000/docs) for interactive FastAPI OpenAPI docs.
+
 
 ---
 
