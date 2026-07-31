@@ -46,7 +46,7 @@ def load_today_jobs(username: str | None = None) -> list[dict]:
         return []
     jobs: list[dict] = []
     seen: set[str] = set()
-    for f in sorted(d.glob("*.json")):
+    for f in sorted(d.glob("*.json"), reverse=True):
         try:
             payload = json.loads(f.read_text(encoding="utf-8"))
         except Exception:

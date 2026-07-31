@@ -47,6 +47,8 @@ def _compute_heuristic_score(job: dict, criteria: dict) -> tuple[int, str]:
 
 def run_match(role: str, location: str, username: str, workers: int = 4) -> dict:
     """Run the complete 4-step AI match pipeline: parse -> scrape -> score -> save."""
+    from applypilot.config import load_env
+    load_env()
     # Step 1 & 2: Parse natural language prompt into criteria via LLM
     log.info("Step 1/4: Parsing prompt '%s' (location='%s')...", role, location)
     criteria = parse_role(role, location)
