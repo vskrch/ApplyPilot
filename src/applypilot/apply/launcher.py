@@ -56,7 +56,11 @@ _claude_lock = threading.Lock()
 # Register cleanup on exit
 atexit.register(cleanup_on_exit)
 if platform.system() != "Windows":
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    try:
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    except ValueError:
+        pass  # Ignore when imported outside main thread
+
 
 
 # ---------------------------------------------------------------------------

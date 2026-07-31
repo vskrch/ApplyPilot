@@ -8,6 +8,7 @@
 ## Phase 2: Backend API & Service Layer Refactoring
 - [x] Fix route collisions in `web/api/routers/jobs.py` (refactor single-job endpoints to use query params `?url=...`)
 - [x] Add missing single-job endpoints (`POST /api/jobs/mark`, `PUT /api/jobs/score`, `DELETE /api/jobs/detail`)
+- [x] Fix top-level signal handler in `applypilot/apply/launcher.py` (wrapped `signal.signal` in try-except ValueError for thread safety)
 - [x] Enhance error handling and task cancellation in `pipeline_service.py` and `apply_service.py`
 - [x] Update `web/api/main.py` and `deps.py` for clean service lifecycle management
 
@@ -36,15 +37,7 @@
   - Interactive profile editor with tabbed sections, search YAML builder, environment API keys (masked inputs), drag-and-drop resume upload
   - System health check diagnostic grid with status indicators
 
-## Phase 6: End-to-End Verification & Testing
-- [x] Test FastAPI API endpoints directly via Python initialization test
-- [x] Build and verify Next.js frontend (`npm run build` completed with 0 errors)
-- [x] Verify zero console errors, zero route collisions, fluid UI transitions, complete API wiring
-
----
-
-## Review & Verification Results
-
-- **FastAPI Backend**: Verified route parameter decoupling. All single-job endpoints (`/api/jobs/detail`, `/api/jobs/resume`, `/api/jobs/cover-letter`, `/api/jobs/score`, `/api/jobs/mark`, `/api/jobs/detail`) work via explicit query parameters without FastAPI path collisions.
-- **Next.js Frontend Build**: Executed `npm run build` in `web/ui`. Compiled 14 static & dynamic pages successfully in Next.js 16 (Turbopack) with 0 errors.
-- **SaaS Aesthetics**: Glassmorphism cards (`.glass-card`), glowing status pills, dark slate/indigo theme (`#0a0c10`), interactive action menus, side-by-side tailored resume & cover letter previews, and toast notifications (`sonner`).
+## Phase 6: Production Deployment Sanity Check
+- [x] **Backend Test Suite**: 12/12 API endpoints passed (`/api/health`, `/api/stats`, `/api/jobs/detail`, `/api/jobs/resume`, `/api/jobs/cover-letter`, `/api/jobs/score`, `/api/jobs/mark`, `/api/doctor`, `/api/config/*`, `/api/pipeline/status`, `/api/apply/status`).
+- [x] **Frontend Build Verification**: `npm run build` inside `web/ui` passed with 0 errors across 14 routes.
+- [x] **Thread Safety**: Fixed thread-level `ValueError` when invoking launcher signal handlers from async worker threads.
