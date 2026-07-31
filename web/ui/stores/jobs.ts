@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { api } from "@/lib/api";
-import type { JobSummary, JobDetail, JobListResponse, SortDir } from "@/lib/types";
+import type { JobSummary, JobDetail, JobResumeResponse, SortDir } from "@/lib/types";
 
 interface JobFilters {
   stage: string;
@@ -20,11 +20,19 @@ interface JobStore {
   pages: number;
   filters: JobFilters;
   selectedJob: JobDetail | null;
+  selectedResume: JobResumeResponse | null;
+  selectedCoverLetter: { text: string; pdf_url: string | null } | null;
   loading: boolean;
+  actionLoading: boolean;
   fetchJobs: () => Promise<void>;
   setFilters: (f: Partial<JobFilters>) => void;
   selectJob: (url: string) => Promise<void>;
   clearSelection: () => void;
+  markJob: (url: string, status: string, reason?: string) => Promise<void>;
+  updateScore: (url: string, score: number, reasoning: string) => Promise<void>;
+  deleteJob: (url: string) => Promise<void>;
+  fetchResume: (url: string) => Promise<void>;
+  fetchCoverLetter: (url: string) => Promise<void>;
 }
 
 export const useJobStore = create<JobStore>((set, get) => ({
@@ -43,7 +51,10 @@ export const useJobStore = create<JobStore>((set, get) => ({
     limit: 50,
   },
   selectedJob: null,
+  selectedResume: null,
+  selectedCoverLetter: null,
   loading: false,
+  actionLoading: false,
 
   fetchJobs: async () => {
     set({ loading: true });
@@ -73,9 +84,70 @@ export const useJobStore = create<JobStore>((set, get) => ({
   selectJob: async (url) => {
     try {
       const job = await api.getJob(url);
-      set({ selectedJob: job });
-    } catch { /* ignore */ }
+      set({ selectedJob: job, selectedResume: null, selectedCoverLetter: null });
+      get().fetchResume(url);
+      get().fetchCoverLetter(url);
+    } catch (err) {
+      console.error("Failed to fetch job detail:", err);
+    }
   },
 
-  clearSelection: () => set({ selectedJob: null }),
+  clearSelection: () => set({ selectedJob: null, selectedResume: null, selectedCoverLetter: null }),
+
+  fetchResume: async (url) => {
+    try {
+      const resume = await api.getJobResume(url);
+      set({ selectedResume: resume });
+    } catch {
+      set({ selectedResume: null });
+    }
+  },
+
+  fetchCoverLetter: async (url) => {
+    try {
+      const cl = await api.getJobCoverLetter(url);
+      set({ selectedCoverLetter: cl });
+    } catch {
+      set({ selectedCoverLetter: null });
+    }
+  },
+
+  markJob: async (url, status, reason) => {
+    set({ actionLoading: true });
+    try {
+      await api.markJob(url, status, reason);
+      if (get().selectedJob?.url === url) {
+        set((s) => s.selectedJob ? { selectedJob: { ...s.selectedJob, apply_status: status } } : s);
+      }
+      await get().fetchJobs();
+    } finally {
+      set({ actionLoading: false });
+    }
+  },
+
+  updateScore: async (url, score, reasoning) => {
+    set({ actionLoading: true });
+    try {
+      await api.updateJobScore(url, score, reasoning);
+      if (get().selectedJob?.url === url) {
+        set((s) => s.selectedJob ? { selectedJob: { ...s.selectedJob, fit_score: score, score_reasoning: reasoning } } : s);
+      }
+      await get().fetchJobs();
+    } finally {
+      set({ actionLoading: false });
+    }
+  },
+
+  deleteJob: async (url) => {
+    set({ actionLoading: true });
+    try {
+      await api.deleteJob(url);
+      if (get().selectedJob?.url === url) {
+        set({ selectedJob: null, selectedResume: null, selectedCoverLetter: null });
+      }
+      await get().fetchJobs();
+    } finally {
+      set({ actionLoading: false });
+    }
+  },
 }));

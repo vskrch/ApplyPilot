@@ -1,40 +1,21 @@
-"use client";
-
-import { usePathname } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { ClientShell } from "@/components/layout/ClientShell";
 
 export const metadata: Metadata = {
-  title: "ApplyPilot",
-  description: "Automated job application pipeline",
+  title: "ApplyPilot — AI Job Application Pipeline Control Center",
+  description: "Automated job discovery, AI scoring, resume tailoring, and autonomous application pipeline",
 };
-
-const FULL_BLEED = new Set(["/", "/review"]);
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const fullBleed = FULL_BLEED.has(pathname);
-
-  if (fullBleed) {
-    return (
-      <html lang="en">
-        <body>{children}</body>
-      </html>
-    );
-  }
-
   return (
-    <html lang="en">
-      <body>
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 ml-64 overflow-auto">{children}</main>
-        </div>
+    <html lang="en" className="dark">
+      <body className="antialiased bg-[#0a0c10] text-[#e2e8f0]">
+        <ClientShell>{children}</ClientShell>
       </body>
     </html>
   );

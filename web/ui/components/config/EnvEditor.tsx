@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useConfigStore } from "@/stores/config";
 import { Eye, EyeOff, Save } from "lucide-react";
+import { toast } from "sonner";
 
 export function EnvEditor() {
   const { env, tier, fetchEnv, saveEnv } = useConfigStore();
@@ -34,13 +35,18 @@ export function EnvEditor() {
   }, [env]);
 
   const handleSave = async () => {
-    await saveEnv({
-      gemini_key: formData.gemini_key,
-      openai_key: formData.openai_key,
-      llm_url: formData.llm_url,
-      llm_model: formData.llm_model,
-      capsolver_key: formData.capsolver_key,
-    });
+    try {
+      const res = await saveEnv({
+        gemini_key: formData.gemini_key,
+        openai_key: formData.openai_key,
+        llm_url: formData.llm_url,
+        llm_model: formData.llm_model,
+        capsolver_key: formData.capsolver_key,
+      });
+      toast.success(`Saved API environment keys. Unlocked Tier ${res.tier}`);
+    } catch {
+      toast.error("Failed to save environment keys");
+    }
   };
 
   const tierNames = ["Discovery", "Standard", "Premium", "Enterprise"];

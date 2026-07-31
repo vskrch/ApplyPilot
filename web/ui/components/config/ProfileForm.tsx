@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useConfigStore } from "@/stores/config";
 import { ChevronDown, ChevronUp, Save } from "lucide-react";
 import { clsx } from "@/lib/utils";
+import { toast } from "sonner";
 
 type SectionKey =
   | "personal"
@@ -134,7 +135,12 @@ export function ProfileForm() {
   const handleSave = async (section: SectionKey) => {
     const sectionData = formData[section];
     if (sectionData) {
-      await saveProfile({ ...formData, [section]: sectionData });
+      try {
+        await saveProfile({ ...formData, [section]: sectionData });
+        toast.success(`Saved ${section.replace("_", " ")} configuration`);
+      } catch {
+        toast.error(`Failed to save ${section}`);
+      }
     }
   };
 

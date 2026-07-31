@@ -7,7 +7,7 @@ import PipelineControl from "@/components/pipeline/PipelineControl";
 import StageProgress from "@/components/pipeline/StageProgress";
 import StageCard from "@/components/pipeline/StageCard";
 import PipelineLog from "@/components/pipeline/PipelineLog";
-import { Clock } from "lucide-react";
+import { Clock, Play, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function PipelinePage() {
   const isRunning = usePipelineStore((s) => s.isRunning);
@@ -69,51 +69,69 @@ export default function PipelinePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <header className="border-b border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3">
-        <h1 className="text-lg font-semibold text-[var(--text-primary)]">Pipeline</h1>
-      </header>
+    <div className="min-h-screen bg-[#0a0c10] p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-5 border-b border-[#2a3447]">
+        <div>
+          <h1 className="text-xl font-bold text-slate-100 flex items-center gap-3">
+            Pipeline Control Center
+            {isRunning && (
+              <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                Pipeline Active
+              </span>
+            )}
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Configure stage parameters, monitor real-time WebSocket progress, and view live pipeline logs
+          </p>
+        </div>
+        {isRunning && (
+          <div className="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg bg-[#181d28] border border-[#2a3447] text-slate-300">
+            <Clock size={14} className="text-blue-400" />
+            Elapsed: {elapsed.toFixed(1)}s
+          </div>
+        )}
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <PipelineControl />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <PipelineControl />
+        </div>
+
+        <div className="lg:col-span-2 space-y-6">
+          <div className="card bg-[#12161f] border-[#2a3447] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#2a3447] pb-3">
+              <h3 className="text-sm font-bold text-slate-100">Live Stage Orchestration</h3>
+              <span className="text-xs text-slate-400 font-mono">
+                {completedStages.length} of 6 Stages Complete
+              </span>
+            </div>
+            <StageProgress currentStage={currentStage} completedStages={completedStages} />
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+              {Object.entries(stageLabels).map(([key, label]) => (
+                <StageCard
+                  key={key}
+                  stage={key}
+                  label={label}
+                  status={stageStats[key]?.status || "pending"}
+                  count={stageStats[key]?.count || 0}
+                  elapsed={stageStats[key]?.elapsed || 0}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-4">
-            <div className="card">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-[var(--text-secondary)]">Pipeline Progress</h3>
-                {isRunning && (
-                  <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                    <Clock size={12} />
-                    {elapsed.toFixed(1)}s
-                  </div>
-                )}
-              </div>
-              <StageProgress currentStage={currentStage} completedStages={completedStages} />
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-                {Object.entries(stageLabels).map(([key, label]) => (
-                  <StageCard
-                    key={key}
-                    stage={key}
-                    label={label}
-                    status={stageStats[key]?.status || "pending"}
-                    count={stageStats[key]?.count || 0}
-                    elapsed={stageStats[key]?.elapsed || 0}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="card">
-              <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-3">Live Log</h3>
-              <PipelineLog events={events} />
-            </div>
+          <div className="card bg-[#12161f] border-[#2a3447] space-y-3">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center justify-between border-b border-[#2a3447] pb-3">
+              <span>Real-Time Execution Logs</span>
+              <span className="text-[11px] text-slate-400 font-normal">Streaming via /ws/pipeline</span>
+            </h3>
+            <PipelineLog events={events} />
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

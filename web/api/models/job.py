@@ -71,8 +71,15 @@ class JobCoverLetterResponse(BaseModel):
 
 
 class ScoreOverride(BaseModel):
+    url: str | None = None
     score: int = Field(ge=1, le=10)
     reasoning: str = ""
+
+
+class JobMarkRequest(BaseModel):
+    url: str
+    status: str
+    reason: str | None = None
 
 
 class JobActionResponse(BaseModel):
@@ -81,3 +88,4 @@ class JobActionResponse(BaseModel):
 
 class JobDeleteResponse(BaseModel):
     deleted: bool = True
+

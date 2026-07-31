@@ -16,7 +16,7 @@ interface ConfigStore {
   fetchSearches: () => Promise<void>;
   saveSearches: (s: Record<string, unknown>) => Promise<void>;
   fetchEnv: () => Promise<void>;
-  saveEnv: (e: Record<string, unknown>) => Promise<void>;
+  saveEnv: (e: Record<string, unknown>) => Promise<{ saved: boolean; tier: number }>;
   fetchDoctor: () => Promise<void>;
   fetchResume: () => Promise<void>;
 }
@@ -65,6 +65,7 @@ export const useConfigStore = create<ConfigStore>((set) => ({
   saveEnv: async (e) => {
     const result = await api.saveEnv(e);
     set({ tier: result.tier });
+    return result;
   },
 
   fetchDoctor: async () => {

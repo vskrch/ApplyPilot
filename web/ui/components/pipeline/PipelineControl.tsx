@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { usePipelineStore } from "@/stores/pipeline";
-import { Play, Square, Loader2 } from "lucide-react";
+import { Play, Square, Settings2, Sliders, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 const STAGES = [
-  { key: "discover", label: "Discover" },
-  { key: "enrich", label: "Enrich" },
-  { key: "score", label: "Score" },
-  { key: "tailor", label: "Tailor" },
-  { key: "cover", label: "Cover" },
-  { key: "pdf", label: "PDF" },
+  { key: "discover", label: "Discovery (Scrape & Workday)" },
+  { key: "enrich", label: "Enrichment (Cascade HTML/CSS/AI)" },
+  { key: "score", label: "AI Scoring (1-10)" },
+  { key: "tailor", label: "Resume Tailoring" },
+  { key: "cover", label: "Cover Letter Gen" },
+  { key: "pdf", label: "PDF Rendering" },
 ];
 
 const PRESETS: Record<string, string[]> = {
@@ -39,160 +40,173 @@ export default function PipelineControl() {
 
   const applyPreset = (name: string) => {
     setStages([...PRESETS[name]]);
+    toast.info(`Preset applied: ${name}`);
   };
 
   const handleRun = async () => {
     if (isRunning) {
       await cancelPipeline();
+      toast.warning("Pipeline cancellation requested");
       return;
     }
-    await startPipeline({
-      stages,
-      min_score: minScore,
-      workers,
-      stream,
-      validation,
-      dry_run: dryRun,
-    });
+    if (stages.length === 0) {
+      toast.error("Select at least one stage to run");
+      return;
+    }
+    try {
+      await startPipeline({
+        stages,
+        min_score: minScore,
+        workers,
+        stream,
+        validation,
+        dry_run: dryRun,
+      });
+      toast.success("Pipeline execution started");
+    } catch {
+      toast.error("Failed to start pipeline");
+    }
   };
 
   return (
-    <div className="card space-y-5">
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)]">Pipeline Control</h3>
+    <div className="card space-y-5 bg-[#12161f] border-[#2a3447]">
+      <div className="flex items-center justify-between border-b border-[#2a3447] pb-3">
+        <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+          <Sliders size={16} className="text-blue-400" />
+          Pipeline Execution Config
+        </h3>
+        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          CLI Engine v0.3
+        </span>
+      </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase mb-2">Stages</label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          Select Stages ({stages.length}/{STAGES.length})
+        </label>
+        <div className="space-y-1.5 bg-[#181d28] p-3 rounded-xl border border-[#2a3447]">
           {STAGES.map((s) => (
             <label
               key={s.key}
-              className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)]"
+              className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer hover:text-slate-100 select-none py-1 px-1 rounded hover:bg-[#222938]"
             >
               <input
                 type="checkbox"
                 checked={stages.includes(s.key)}
                 onChange={() => toggleStage(s.key)}
-                className="accent-[var(--accent)]"
+                className="rounded accent-blue-500 w-3.5 h-3.5"
               />
-              {s.label}
+              <span>{s.label}</span>
             </label>
           ))}
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase mb-2">Quick Presets</label>
-        <div className="flex gap-2">
-          <button className="btn btn-ghost btn-sm text-xs" onClick={() => applyPreset("full")}>
-            Full Pipeline
-          </button>
-          <button className="btn btn-ghost btn-sm text-xs" onClick={() => applyPreset("discovery")}>
-            Discovery Only
-          </button>
-          <button className="btn btn-ghost btn-sm text-xs" onClick={() => applyPreset("ai")}>
-            AI Stages Only
-          </button>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase mb-1">
-          Min Score: {minScore}
+        <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          Quick Presets
         </label>
-        <input
-          type="range"
-          min={1}
-          max={10}
-          value={minScore}
-          onChange={(e) => setMinScore(Number(e.target.value))}
-          className="w-full accent-[var(--accent)]"
-        />
-        <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
-          <span>1</span>
-          <span>10</span>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase mb-1">
-          Workers: {workers}
-        </label>
-        <input
-          type="range"
-          min={1}
-          max={8}
-          value={workers}
-          onChange={(e) => setWorkers(Number(e.target.value))}
-          className="w-full accent-[var(--accent)]"
-        />
-        <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
-          <span>1</span>
-          <span>8</span>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase mb-2">Mode</label>
         <div className="flex gap-2">
-          <button
-            className={`btn btn-sm ${!stream ? "btn-primary" : "btn-ghost"}`}
-            onClick={() => setStream(false)}
-          >
-            Sequential
+          <button className="btn btn-ghost btn-sm text-xs flex-1 justify-center border-[#2a3447]" onClick={() => applyPreset("full")}>
+            Full Run
           </button>
-          <button
-            className={`btn btn-sm ${stream ? "btn-primary" : "btn-ghost"}`}
-            onClick={() => setStream(true)}
-          >
-            Streaming
+          <button className="btn btn-ghost btn-sm text-xs flex-1 justify-center border-[#2a3447]" onClick={() => applyPreset("discovery")}>
+            Discover Only
+          </button>
+          <button className="btn btn-ghost btn-sm text-xs flex-1 justify-center border-[#2a3447]" onClick={() => applyPreset("ai")}>
+            AI Stages
           </button>
         </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase mb-2">Validation</label>
-        <div className="flex gap-3">
-          {["strict", "normal", "lenient"].map((v) => (
-            <label key={v} className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] cursor-pointer">
-              <input
-                type="radio"
-                name="validation"
-                value={v}
-                checked={validation === v}
-                onChange={() => setValidation(v)}
-                className="accent-[var(--accent)]"
-              />
-              {v.charAt(0).toUpperCase() + v.slice(1)}
-            </label>
-          ))}
+      <div className="space-y-4 pt-1">
+        <div>
+          <div className="flex justify-between text-xs text-slate-300 mb-1">
+            <span>Minimum Fit Score Threshold</span>
+            <span className="font-bold text-blue-400">{minScore} / 10</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            value={minScore}
+            onChange={(e) => setMinScore(Number(e.target.value))}
+            className="w-full accent-blue-500 bg-[#2a3447] h-1.5 rounded-lg"
+          />
         </div>
-      </div>
 
-      <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
-        <input
-          type="checkbox"
-          checked={dryRun}
-          onChange={(e) => setDryRun(e.target.checked)}
-          className="accent-[var(--accent)]"
-        />
-        Dry Run
-      </label>
+        <div>
+          <div className="flex justify-between text-xs text-slate-300 mb-1">
+            <span>Parallel Worker Threads</span>
+            <span className="font-bold text-blue-400">{workers} Workers</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={8}
+            value={workers}
+            onChange={(e) => setWorkers(Number(e.target.value))}
+            className="w-full accent-blue-500 bg-[#2a3447] h-1.5 rounded-lg"
+          />
+        </div>
+
+        <div className="flex justify-between items-center bg-[#181d28] p-3 rounded-xl border border-[#2a3447]">
+          <span className="text-xs text-slate-300 font-medium">Orchestration Mode</span>
+          <div className="flex gap-1">
+            <button
+              className={`btn btn-sm text-xs ${!stream ? "btn-primary" : "btn-ghost border-[#2a3447]"}`}
+              onClick={() => setStream(false)}
+            >
+              Sequential
+            </button>
+            <button
+              className={`btn btn-sm text-xs ${stream ? "btn-primary" : "btn-ghost border-[#2a3447]"}`}
+              onClick={() => setStream(true)}
+            >
+              Streaming
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center bg-[#181d28] p-3 rounded-xl border border-[#2a3447]">
+          <span className="text-xs text-slate-300 font-medium">Validation Strictly Enforced</span>
+          <div className="flex gap-1">
+            {["strict", "normal", "lenient"].map((v) => (
+              <button
+                key={v}
+                className={`btn btn-sm text-xs capitalize ${validation === v ? "btn-primary" : "btn-ghost border-[#2a3447]"}`}
+                onClick={() => setValidation(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer bg-[#181d28] p-3 rounded-xl border border-[#2a3447]">
+          <input
+            type="checkbox"
+            checked={dryRun}
+            onChange={(e) => setDryRun(e.target.checked)}
+            className="accent-blue-500"
+          />
+          <span>Dry Run (Simulate execution without modifying files)</span>
+        </label>
+      </div>
 
       <button
         className={`w-full justify-center btn ${
           isRunning ? "btn-danger" : "btn-primary"
-        } py-3 text-base font-semibold`}
+        } py-3 text-sm font-semibold shadow-lg`}
         onClick={handleRun}
       >
         {isRunning ? (
           <>
-            <Square size={16} />
-            Cancel
+            <Square size={16} /> Cancel Active Pipeline Run
           </>
         ) : (
           <>
-            <Play size={16} />
-            Run Pipeline
+            <Play size={16} /> Start Pipeline Execution
           </>
         )}
       </button>

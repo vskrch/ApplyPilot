@@ -27,13 +27,13 @@ export const api = {
     if (params) Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== "") qs.set(k, String(v)); });
     return fetchJSON<JobListResponse>(`/api/jobs?${qs.toString()}`);
   },
-  getJob: (url: string) => fetchJSON<JobDetail>(`/api/jobs/${encodeURIComponent(url)}`),
-  getJobResume: (url: string) => fetchJSON<JobResumeResponse>(`/api/jobs/${encodeURIComponent(url)}/resume`),
-  getJobCoverLetter: (url: string) => fetchJSON<{ text: string; pdf_url: string | null }>(`/api/jobs/${encodeURIComponent(url)}/cover-letter`),
+  getJob: (url: string) => fetchJSON<JobDetail>(`/api/jobs/detail?url=${encodeURIComponent(url)}`),
+  getJobResume: (url: string) => fetchJSON<JobResumeResponse>(`/api/jobs/resume?url=${encodeURIComponent(url)}`),
+  getJobCoverLetter: (url: string) => fetchJSON<{ text: string; pdf_url: string | null }>(`/api/jobs/cover-letter?url=${encodeURIComponent(url)}`),
   updateJobScore: (url: string, score: number, reasoning: string) =>
-    fetchJSON(`/api/jobs/${encodeURIComponent(url)}/score`, { method: "PUT", body: JSON.stringify({ score, reasoning }) }),
+    fetchJSON("/api/jobs/score", { method: "PUT", body: JSON.stringify({ url, score, reasoning }) }),
   deleteJob: (url: string) =>
-    fetchJSON(`/api/jobs/${encodeURIComponent(url)}`, { method: "DELETE" }),
+    fetchJSON(`/api/jobs/detail?url=${encodeURIComponent(url)}`, { method: "DELETE" }),
 
   // Pipeline
   runPipeline: (config: Record<string, unknown>) =>
@@ -47,7 +47,7 @@ export const api = {
   stopApply: () => fetchJSON("/api/apply/stop", { method: "POST" }),
   getApplyStatus: () => fetchJSON<ApplyStatus>("/api/apply/status"),
   markJob: (url: string, status: string, reason?: string) =>
-    fetchJSON("/api/apply/mark", { method: "POST", body: JSON.stringify({ url, status, reason }) }),
+    fetchJSON("/api/jobs/mark", { method: "POST", body: JSON.stringify({ url, status, reason }) }),
   resetFailed: () => fetchJSON<{ reset_count: number }>("/api/apply/reset-failed", { method: "POST" }),
   genPrompt: (url: string, model: string) =>
     fetchJSON<{ prompt: string; command: string }>(`/api/apply/gen-prompt?url=${encodeURIComponent(url)}&model=${model}`, { method: "POST" }),
