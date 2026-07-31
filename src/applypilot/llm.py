@@ -25,10 +25,10 @@ def _detect_provider() -> tuple[str, str, str]:
     """Return (base_url, model, api_key) based on environment variables.
 
     Supports:
-      - Custom OpenAI-compatible endpoints via OPENAI_BASE_URL, LLM_BASE_URL, or LLM_URL
-        (e.g., DeepSeek, Groq, OpenRouter, Together AI, Ollama, LM Studio, vLLM, LiteLLM)
       - Google Gemini via GEMINI_API_KEY
       - OpenAI via OPENAI_API_KEY
+      - Custom OpenAI-compatible endpoints via OPENAI_BASE_URL or LLM_URL
+        (DeepSeek, Groq, OpenRouter, Together AI, Ollama, LM Studio, vLLM)
     """
     gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
     openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
@@ -48,7 +48,23 @@ def _detect_provider() -> tuple[str, str, str]:
         or os.environ.get("OPENAI_MODEL", "").strip()
     )
 
-    # 1. Custom OpenAI-compatible endpoint (DeepSeek, Groq, OpenRouter, Together AI, Ollama, vLLM, LM Studio, etc.)
+    # 1. Google Gemini API (if GEMINI_API_KEY present and no custom OPENAI_BASE_URL)
+    if gemini_key and not os.environ.get("OPENAI_BASE_URL"):
+        return (
+            "https://generativelanguage.googleapis.com/v1beta/openai",
+            model_override or "gemini-2.0-flash",
+            gemini_key,
+        )
+
+    # 2. Standard OpenAI API (if OPENAI_API_KEY present and no custom OPENAI_BASE_URL)
+    if openai_key and not os.environ.get("OPENAI_BASE_URL"):
+        return (
+            "https://api.openai.com/v1",
+            model_override or "gpt-4o-mini",
+            openai_key,
+        )
+
+    # 3. Custom OpenAI-compatible endpoint (DeepSeek, Groq, OpenRouter, Together AI, Ollama, LM Studio, vLLM)
     if base_url:
         key = llm_key or openai_key or gemini_key or "not-needed"
         url = base_url.rstrip("/")
@@ -58,25 +74,9 @@ def _detect_provider() -> tuple[str, str, str]:
             key,
         )
 
-    # 2. Google Gemini API
-    if gemini_key:
-        return (
-            "https://generativelanguage.googleapis.com/v1beta/openai",
-            model_override or "gemini-2.0-flash",
-            gemini_key,
-        )
-
-    # 3. Standard OpenAI API
-    if openai_key or llm_key:
-        return (
-            "https://api.openai.com/v1",
-            model_override or "gpt-4o-mini",
-            openai_key or llm_key,
-        )
-
     raise RuntimeError(
         "No LLM provider configured. "
-        "Set GEMINI_API_KEY, OPENAI_API_KEY, LLM_API_KEY, or OPENAI_BASE_URL/LLM_URL in your environment."
+        "Set GEMINI_API_KEY, OPENAI_API_KEY, or OPENAI_BASE_URL in your environment or Settings."
     )
 
 
