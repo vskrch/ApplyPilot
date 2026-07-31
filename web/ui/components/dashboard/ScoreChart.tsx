@@ -3,45 +3,45 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface ScoreChartProps {
-  distribution: [number, number][];
+  data: { score: number; count: number }[];
 }
 
-export function ScoreChart({ distribution }: ScoreChartProps) {
-  const data = distribution.map(([score, count]) => ({
-    score,
-    count,
-    fill: score >= 7 ? "var(--success)" : score >= 5 ? "var(--warning)" : "var(--danger)",
+export function ScoreChart({ data }: ScoreChartProps) {
+  const chartData = data.map((d) => ({
+    ...d,
+    fill: d.score >= 7 ? "#10b981" : d.score >= 5 ? "#f59e0b" : "#ef4444",
   }));
 
   return (
-    <div className="card" style={{ background: "var(--bg-card)" }}>
-      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-        Score Distribution
+    <div className="card bg-[#12161f] border-[#2a3447] p-5 rounded-xl">
+      <h3 className="text-sm font-bold text-slate-100 mb-4 border-b border-[#2a3447] pb-3">
+        Score Distribution (1 - 10 Fit Rating)
       </h3>
-      <div className="h-64">
+      <div className="h-60">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis
               dataKey="score"
-              tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-              axisLine={{ stroke: "var(--border)" }}
-              tickLine={{ stroke: "var(--border)" }}
+              tick={{ fill: "#94a3b8", fontSize: 11 }}
+              axisLine={{ stroke: "#2a3447" }}
+              tickLine={{ stroke: "#2a3447" }}
             />
             <YAxis
-              tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-              axisLine={{ stroke: "var(--border)" }}
-              tickLine={{ stroke: "var(--border)" }}
+              tick={{ fill: "#94a3b8", fontSize: 11 }}
+              axisLine={{ stroke: "#2a3447" }}
+              tickLine={{ stroke: "#2a3447" }}
             />
             <Tooltip
               contentStyle={{
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border)",
+                background: "#181d28",
+                border: "1px solid #2a3447",
                 borderRadius: "8px",
-                color: "var(--text-primary)",
+                color: "#f1f5f9",
+                fontSize: "12px",
               }}
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={index} fill={entry.fill} />
               ))}
             </Bar>

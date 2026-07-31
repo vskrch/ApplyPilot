@@ -12,7 +12,7 @@ import {
   BarChart3,
   Settings,
   Stethoscope,
-  Activity,
+  Sparkles,
   CheckCircle2,
 } from "lucide-react";
 
@@ -23,6 +23,13 @@ const navSections = [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
       { href: "/jobs", label: "Jobs Center", icon: Briefcase },
       { href: "/analytics", label: "Analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Match & Discovery",
+    items: [
+      { href: "/match", label: "AI Role Matcher", icon: Sparkles },
+      { href: "/review", label: "Today's Review", icon: CheckCircle2 },
     ],
   },
   {
@@ -68,7 +75,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation Sections */}
-      <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-5 overflow-y-auto">
         {navSections.map((section) => (
           <div key={section.title} className="space-y-1">
             <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
@@ -81,7 +88,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     active
                       ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 font-semibold"
                       : "text-slate-400 hover:bg-[#1e2636] hover:text-slate-200"

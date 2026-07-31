@@ -1,57 +1,39 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface SourceBreakdownProps {
-  bySite: [string, number][];
+  data: { site: string; total: number; high_fit: number; avg_score: number }[];
 }
 
-export function SourceBreakdown({ bySite }: SourceBreakdownProps) {
-  const data = bySite.slice(0, 8).map(([site, count], i) => ({
-    site: site.length > 15 ? site.slice(0, 15) + "…" : site,
-    count,
-    fill: `hsl(${(i * 45) % 360}, 70%, 60%)`,
+export function SourceBreakdown({ data }: SourceBreakdownProps) {
+  const chartData = data.slice(0, 7).map((d) => ({
+    site: d.site.length > 14 ? d.site.slice(0, 14) + "…" : d.site,
+    Total: d.total,
+    "High Fit (7+)": d.high_fit,
   }));
 
   return (
-    <div className="card" style={{ background: "var(--bg-card)" }}>
-      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-        Source Breakdown
+    <div className="card bg-[#12161f] border-[#2a3447] p-5 rounded-xl">
+      <h3 className="text-sm font-bold text-slate-100 mb-4 border-b border-[#2a3447] pb-3">
+        Job Source Performance Breakdown
       </h3>
-      <div className="h-64">
+      <div className="h-60">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={data}
-            margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-          >
-            <XAxis
-              type="number"
-              tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-              axisLine={{ stroke: "var(--border)" }}
-              tickLine={{ stroke: "var(--border)" }}
-            />
-            <YAxis
-              dataKey="site"
-              type="category"
-              width={100}
-              tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-              axisLine={false}
-              tickLine={false}
-            />
+          <BarChart layout="vertical" data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+            <XAxis type="number" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={{ stroke: "#2a3447" }} />
+            <YAxis dataKey="site" type="category" width={95} tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} />
             <Tooltip
               contentStyle={{
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border)",
+                background: "#181d28",
+                border: "1px solid #2a3447",
                 borderRadius: "8px",
-                color: "var(--text-primary)",
+                color: "#f1f5f9",
+                fontSize: "12px",
               }}
             />
-            <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-              {data.map((entry, index) => (
-                <Cell key={index} fill={entry.fill} />
-              ))}
-            </Bar>
+            <Bar dataKey="Total" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="High Fit (7+)" fill="#10b981" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
