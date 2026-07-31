@@ -1,9 +1,17 @@
 import type { JobListResponse, JobDetail, JobResumeResponse, DoctorResponse, EnvConfig, ApplyStatus, MatchJobsResponse, MatchResult, MatchRunResponse } from "./types";
 
-const BASE = "";
+function getApiBase(): string {
+  if (typeof window === "undefined") return "http://127.0.0.1:8000";
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (window.location.port === "3000") {
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
+  return "";
+}
 
 async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${url}`, {
+  const base = getApiBase();
+  const res = await fetch(`${base}${url}`, {
     headers: { "Content-Type": "application/json", ...init?.headers },
     ...init,
   });
