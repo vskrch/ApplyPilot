@@ -182,6 +182,8 @@ export interface MatchJob {
   username: string | null;
   platform?: string | null;
   site?: string | null;
+  fit_score?: number | null;
+  score_reasoning?: string | null;
 }
 
 export interface MatchJobsResponse {

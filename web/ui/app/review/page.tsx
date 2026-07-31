@@ -169,9 +169,22 @@ export default function ReviewPage() {
             >
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-base font-bold text-slate-100 group-hover:text-emerald-400 transition-colors leading-snug">
-                    {job.title || "Untitled Role"}
-                  </h3>
+                  <div className="flex items-center gap-2.5">
+                    {job.fit_score && (
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono ${
+                        job.fit_score >= 7
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          : job.fit_score >= 5
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          : "bg-red-500/20 text-red-400 border border-red-500/30"
+                      }`}>
+                        Fit {job.fit_score}/10
+                      </span>
+                    )}
+                    <h3 className="text-base font-bold text-slate-100 group-hover:text-emerald-400 transition-colors leading-snug">
+                      {job.title || "Untitled Role"}
+                    </h3>
+                  </div>
                   {job.username && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
                       @{job.username}
@@ -199,6 +212,13 @@ export default function ReviewPage() {
                     </span>
                   )}
                 </div>
+
+                {job.score_reasoning && (
+                  <div className="p-2.5 rounded-lg bg-[#181d28] border border-[#2a3447] text-[11px] text-slate-300 italic">
+                    <span className="font-semibold text-emerald-400 not-italic">AI Match Reasoning: </span>
+                    {job.score_reasoning}
+                  </div>
+                )}
 
                 {job.description && (
                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-3 pt-1">

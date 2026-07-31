@@ -415,52 +415,91 @@ def _fetch_one(site: dict, query: str, location_encoded: str) -> list[dict]:
 # -- Batch --------------------------------------------------------------------
 
 def batch_scrape(criteria: dict, location: str, max_workers: int = 3) -> list[dict]:
-    """Run all search x site combinations and return filtered jobs.
-
-    ponytail: each target spawns its own crawl4ai browser instance. A shared
-    AsyncWebCrawler pool + arun_many would scale better, add when throughput
-    matters.
-    """
+    """Scrape major platforms (LinkedIn, Indeed, Glassdoor, Google Jobs) via JobSpy + direct sites."""
     from urllib.parse import quote_plus
-    sites = _load_sites()
-    if not sites:
-        log.warning("No sites configured in sites.yaml")
-        return []
-
-    queries = criteria.get("queries") or []
+    queries = criteria.get("queries") or ["software engineer"]
     loc_tokens = _location_tokens(location)
-    loc_enc = quote_plus(location.split(",")[0].strip() or "remote")
-
-    targets: list[tuple[dict, str]] = []
-    for s in sites:
-        if s.get("type") == "search":
-            for q in queries:
-                targets.append((s, q))
-        else:
-            targets.append((s, queries[0] if queries else ""))
-
-    log.info("Batch scrape: %d targets (sites=%d, queries=%d)", len(targets), len(sites), len(queries))
+    target_loc = location.strip() or "Remote"
 
     all_jobs: list[dict] = []
     seen: set[str] = set()
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    if max_workers <= 1 or len(targets) <= 1:
-        for s, q in targets:
-            for j in _fetch_one(s, q, loc_enc):
-                if _keep(j, seen, loc_tokens, criteria):
-                    all_jobs.append(j)
-    else:
-        with ThreadPoolExecutor(max_workers=min(max_workers, len(targets))) as pool:
-            fut = {pool.submit(_fetch_one, s, q, loc_enc): (s, q) for s, q in targets}
-            for f in as_completed(fut):
+
+    # 1. Scrape via JobSpy (LinkedIn, Indeed, Glassdoor, Google Jobs)
+    try:
+        from jobspy import scrape_jobs
+        for q in queries[:3]:
+            try:
+                log.info("JobSpy scraping query='%s', location='%s'", q, target_loc)
+                df = scrape_jobs(
+                    site_name=["indeed", "linkedin", "glassdoor", "google"],
+                    search_term=q,
+                    location=target_loc,
+                    results_wanted=20,
+                    hours_old=168,
+                )
+                if df is not None and not df.empty:
+                    for _, row in df.iterrows():
+                        u = str(row.get("job_url", "")).strip()
+                        if not u or u == "nan" or u in seen:
+                            continue
+                        t = str(row.get("title", "")) if str(row.get("title", "")) != "nan" else None
+                        comp = str(row.get("company", "")) if str(row.get("company", "")) != "nan" else None
+                        loc = str(row.get("location", "")) if str(row.get("location", "")) != "nan" else target_loc
+                        desc = str(row.get("description", "")) if str(row.get("description", "")) != "nan" else None
+                        st = str(row.get("site", "jobspy"))
+                        dt = str(row.get("date_posted", "")) if str(row.get("date_posted", "")) != "nan" else ""
+
+                        job_dict = {
+                            "url": u,
+                            "title": t or "Untitled Role",
+                            "company": comp,
+                            "location": loc,
+                            "description": desc,
+                            "posting_date": dt,
+                            "site": st,
+                            "platform": st,
+                        }
+
+                        if _keep(job_dict, seen, loc_tokens, criteria):
+                            all_jobs.append(job_dict)
+            except Exception as ex:
+                log.warning("JobSpy scrape error for query '%s': %s", q, ex)
+    except Exception as e:
+        log.warning("JobSpy unavailable or failed: %s", e)
+
+    # 2. Fallback to direct sites config only if JobSpy returned few results
+    if len(all_jobs) < 5:
+        sites = _load_sites()
+        if sites:
+            loc_enc = quote_plus(target_loc.split(",")[0].strip() or "remote")
+            for s in sites[:3]:
                 try:
-                    for j in f.result():
+                    for j in _fetch_one(s, queries[0], loc_enc):
                         if _keep(j, seen, loc_tokens, criteria):
                             all_jobs.append(j)
                 except Exception as e:
-                    log.warning("target error: %s", e)
+                    log.warning("direct site scrape error: %s", e)
 
-    log.info("Matched %d jobs after location + criteria filter", len(all_jobs))
+    # 3. Store matches in ApplyPilot SQLite database
+    if all_jobs:
+        try:
+            from applypilot.database import get_connection, store_jobs
+            conn = get_connection()
+            db_jobs = []
+            for j in all_jobs:
+                db_jobs.append({
+                    "url": j["url"],
+                    "title": j["title"],
+                    "company": j.get("company"),
+                    "location": j.get("location"),
+                    "site": j.get("site", "jobspy"),
+                    "description": j.get("description"),
+                })
+            store_jobs(conn, db_jobs, "multi-board", "jobspy")
+        except Exception as e:
+            log.warning("Failed to store matched jobs in SQLite DB: %s", e)
+
+    log.info("Matched %d jobs across LinkedIn/Indeed/Glassdoor/Google + direct sites", len(all_jobs))
     return all_jobs
 
 
