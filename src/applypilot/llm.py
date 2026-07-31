@@ -64,13 +64,15 @@ def _detect_provider() -> tuple[str, str, str]:
             openai_key,
         )
 
-    # 3. Custom OpenAI-compatible endpoint (DeepSeek, Groq, OpenRouter, Together AI, Ollama, LM Studio, vLLM)
+    # 3. Custom OpenAI-compatible endpoint (Potato Gateway, DeepSeek, Groq, OpenRouter, Together AI, Ollama, LM Studio, vLLM)
     if base_url:
         key = llm_key or openai_key or gemini_key or "not-needed"
         url = base_url.rstrip("/")
+        if not url.endswith("/v1") and not url.endswith("/openai") and not url.endswith("/generateContent") and "v1beta" not in url:
+            url = f"{url}/v1"
         return (
             url,
-            model_override or "gpt-4o-mini",
+            model_override or "potato/auto",
             key,
         )
 
