@@ -211,7 +211,7 @@ def apply(
             raise typer.Exit(code=1)
 
     if gen:
-        from applypilot.apply.launcher import gen_prompt, BASE_CDP_PORT
+        from applypilot.apply.launcher import gen_prompt
         target = url or ""
         if not target:
             console.print("[red]--gen requires --url to specify which job.[/red]")
@@ -222,7 +222,7 @@ def apply(
             raise typer.Exit(code=1)
         mcp_path = _profile_path.parent / ".mcp-apply-0.json"
         console.print(f"[green]Wrote prompt to:[/green] {prompt_file}")
-        console.print(f"\n[bold]Run manually:[/bold]")
+        console.print("\n[bold]Run manually:[/bold]")
         console.print(
             f"  claude --model {model} -p "
             f"--mcp-config {mcp_path} "
@@ -338,7 +338,7 @@ def doctor() -> None:
     import shutil
     from applypilot.config import (
         load_env, PROFILE_PATH, RESUME_PATH, RESUME_PDF_PATH,
-        SEARCH_CONFIG_PATH, ENV_PATH, get_chrome_path,
+        SEARCH_CONFIG_PATH, get_chrome_path,
     )
 
     load_env()
@@ -451,6 +451,54 @@ def doctor() -> None:
         console.print("[dim]  → Tier 3 unlocks: auto-apply (needs Claude Code CLI + Chrome + Node.js)[/dim]")
 
     console.print()
+
+
+@app.command()
+def web(
+    port: int = typer.Option(8000, help="API server port"),
+    ui_port: int = typer.Option(3000, help="UI dev server port"),
+    host: str = typer.Option("127.0.0.1", help="Bind address"),
+) -> None:
+    """Launch the web UI (API server + frontend)."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    web_dir = Path(__file__).parent.parent.parent / "web"
+    api_dir = web_dir / "api"
+    ui_dir = web_dir / "ui"
+
+    if not api_dir.exists() or not ui_dir.exists():
+        console.print("[red]Web UI not found. Ensure the 'web/' directory exists.[/red]")
+        raise typer.Exit(code=1)
+
+    console.print("\n[bold]ApplyPilot Web UI[/bold]")
+    console.print(f"  API: http://{host}:{port}")
+    console.print(f"  UI:  http://localhost:{ui_port}")
+    console.print(f"  API docs: http://{host}:{port}/docs\n")
+
+    try:
+        api_proc = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "web.api.main:app",
+             "--host", host, "--port", str(port), "--reload"],
+            cwd=str(Path(__file__).parent.parent.parent),
+            env={**__import__("os").environ, "PYTHONPATH": str(Path(__file__).parent.parent.parent / "src")},
+        )
+
+        ui_proc = subprocess.Popen(
+            ["npm", "run", "dev", "--", "--port", str(ui_port)],
+            cwd=str(ui_dir),
+        )
+
+        console.print("[green]Both servers started. Press Ctrl+C to stop.[/green]\n")
+        api_proc.wait()
+        ui_proc.wait()
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Shutting down...[/yellow]")
+        api_proc.terminate()
+        ui_proc.terminate()
+        api_proc.wait()
+        ui_proc.wait()
 
 
 if __name__ == "__main__":
