@@ -103,6 +103,17 @@ class TaskRegistry:
     def is_apply_running(self) -> bool:
         return self._active_apply is not None
 
+    def get_task(self, task_id: str) -> dict[str, Any] | None:
+        """Return a snapshot of a task's status, result, and error."""
+        info = self._tasks.get(task_id)
+        if not info:
+            return None
+        return {
+            "status": info.status,
+            "result": info.result,
+            "error": info.error,
+        }
+
     def cleanup(self) -> None:
         """Remove completed tasks older than 1 hour."""
         cutoff = time.time() - 3600

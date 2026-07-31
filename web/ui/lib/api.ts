@@ -1,4 +1,4 @@
-import type { JobListResponse, JobDetail, JobResumeResponse, DoctorResponse, EnvConfig, ApplyStatus } from "./types";
+import type { JobListResponse, JobDetail, JobResumeResponse, DoctorResponse, EnvConfig, ApplyStatus, MatchJobsResponse, MatchResult, MatchRunResponse } from "./types";
 
 const BASE = "";
 
@@ -63,4 +63,11 @@ export const api = {
   getDoctor: () => fetchJSON<DoctorResponse>("/api/doctor"),
   getEmployers: () => fetchJSON<Record<string, unknown>>("/api/config/employers"),
   getSites: () => fetchJSON<Record<string, unknown>>("/api/config/sites"),
+
+  // Match
+  runMatch: (role: string, location: string, username: string) =>
+    fetchJSON<MatchRunResponse>("/api/match/run", { method: "POST", body: JSON.stringify({ role, location, username }) }),
+  getMatchResult: (taskId: string) => fetchJSON<MatchResult>(`/api/match/result/${encodeURIComponent(taskId)}`),
+  getTodayJobs: (username?: string) =>
+    fetchJSON<MatchJobsResponse>(`/api/match/jobs${username ? `?username=${encodeURIComponent(username)}` : ""}`),
 };

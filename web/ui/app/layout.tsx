@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -7,11 +10,24 @@ export const metadata: Metadata = {
   description: "Automated job application pipeline",
 };
 
+const FULL_BLEED = new Set(["/", "/review"]);
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const fullBleed = FULL_BLEED.has(pathname);
+
+  if (fullBleed) {
+    return (
+      <html lang="en">
+        <body>{children}</body>
+      </html>
+    );
+  }
+
   return (
     <html lang="en">
       <body>

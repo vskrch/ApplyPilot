@@ -1,0 +1,1 @@
+"""Zero-noise job matching pipeline: LLM parse -> batch scrape -> dated JSON."""

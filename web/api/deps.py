@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from web.api.services.apply_service import ApplyService
 from web.api.services.event_bus import EventBus
+from web.api.services.match_service import MatchService
 from web.api.services.pipeline_service import PipelineService
 from web.api.services.task_registry import TaskRegistry
 
@@ -12,16 +13,18 @@ event_bus: EventBus | None = None
 task_registry: TaskRegistry | None = None
 pipeline_service: PipelineService | None = None
 apply_service: ApplyService | None = None
+match_service: MatchService | None = None
 
 
 def init_services() -> None:
     """Initialize service singletons."""
-    global event_bus, task_registry, pipeline_service, apply_service
+    global event_bus, task_registry, pipeline_service, apply_service, match_service
 
     event_bus = EventBus()
     task_registry = TaskRegistry()
     pipeline_service = PipelineService(event_bus, task_registry)
     apply_service = ApplyService(event_bus, task_registry)
+    match_service = MatchService(event_bus, task_registry)
 
 
 def get_event_bus() -> EventBus:
@@ -37,6 +40,11 @@ def get_pipeline_service() -> PipelineService:
 def get_apply_service() -> ApplyService:
     assert apply_service is not None
     return apply_service
+
+
+def get_match_service() -> MatchService:
+    assert match_service is not None
+    return match_service
 
 
 def get_task_registry() -> TaskRegistry:

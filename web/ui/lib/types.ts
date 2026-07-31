@@ -172,4 +172,32 @@ export interface JobResumeResponse {
   tailored: string | null;
 }
 
+export interface MatchJob {
+  title: string | null;
+  company: string | null;
+  location: string | null;
+  description: string | null;
+  url: string;
+  posting_date: string | null;
+  username: string | null;
+}
+
+export interface MatchJobsResponse {
+  date: string;
+  count: number;
+  jobs: MatchJob[];
+}
+
+export interface MatchRunResponse {
+  task_id: string;
+  status: string;
+}
+
+export interface MatchResult {
+  task_id: string;
+  count: number;
+  path: string;
+  criteria: Record<string, unknown>;
+}
+
 export type SortDir = "asc" | "desc";

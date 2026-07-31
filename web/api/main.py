@@ -12,7 +12,7 @@ from applypilot.config import load_env, ensure_dirs
 from applypilot.database import init_db
 
 from web.api.deps import init_services
-from web.api.routers import apply, config, doctor, files, jobs, pipeline, stats, ws
+from web.api.routers import apply, config, doctor, files, jobs, match, pipeline, stats, ws
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(config.router)
     app.include_router(doctor.router)
     app.include_router(files.router)
+    app.include_router(match.router)
     app.include_router(ws.router)
 
     @app.get("/api/health")

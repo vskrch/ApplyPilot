@@ -1,98 +1,126 @@
 "use client";
 
-import { useEffect } from "react";
-import { useConfigStore } from "@/stores/config";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { BarChart3, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMatchStore } from "@/stores/match";
+import { ArrowRight, Loader2 } from "lucide-react";
 
-export default function DashboardPage() {
-  const { fetchDoctor, tier, tierLabel, doctorChecks } = useConfigStore();
+const DEFAULT_LOCATION =
+  "Canada (Toronto, Vancouver, Ottawa, Montreal, Calgary), USA (remote)";
 
+export default function LandingPage() {
+  const router = useRouter();
+  const { isRunning, statusMsg, runMatch, pollResult, loadTodayJobs } = useMatchStore();
+  const [role, setRole] = useState("");
+  const [location, setLocation] = useState(DEFAULT_LOCATION);
+  const [username, setUsername] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ponytail: load saved username + today's job count once
   useEffect(() => {
-    fetchDoctor();
-  }, [fetchDoctor]);
+    const saved = localStorage.getItem("ap_username") || "";
+    if (saved) setUsername(saved);
+    loadTodayJobs(saved || undefined);
+  }, [loadTodayJobs]);
 
-  const okCount = doctorChecks.filter((c) => c.status === "ok").length;
-  const missingCount = doctorChecks.filter((c) => c.status === "missing").length;
-  const warnCount = doctorChecks.filter((c) => c.status === "warn").length;
+  // Poll the match task until it finishes, then route to /review
+  useEffect(() => {
+    if (!isRunning) return;
+    pollRef.current = setInterval(async () => {
+      const done = await pollResult();
+      if (done !== null) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        if (done) router.push("/review");
+      }
+    }, 2000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isRunning, pollResult, router]);
+
+  const todayCount = useMatchStore((s) => s.todayJobs.length);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!role.trim() || isRunning) return;
+    const u = username.trim() || "anonymous";
+    localStorage.setItem("ap_username", u);
+    await runMatch(role.trim(), location.trim() || DEFAULT_LOCATION, u);
+  };
 
   return (
-    <div className="p-6 ml-64">
-      <PageHeader
-        title="Dashboard"
-        description="Welcome to ApplyPilot"
-      />
+    <div className="matcha-root">
+      <div className="matcha-container">
+        <div className="matcha-eyebrow">Zero-noise job matching</div>
+        <h1 className="matcha-hero">Remote startup roles in your inbox</h1>
+        <p className="matcha-sub">
+          We read every job description across 10k+ under-the-radar remote startups
+          and surface only the handful of roles that actually fit you — delivered as
+          a single, zero-noise list. No spam, no recruiters, no scrolling.
+        </p>
 
-      {!doctorChecks.length ? (
-        <LoadingSpinner />
-      ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <CheckCircle size={24} className="text-[var(--success)]" />
-                <div>
-                  <div className="text-2xl font-bold text-[var(--text-primary)]">{okCount}</div>
-                  <div className="text-sm text-[var(--text-muted)]">Checks OK</div>
-                </div>
-              </div>
-            </div>
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <XCircle size={24} className="text-[var(--danger)]" />
-                <div>
-                  <div className="text-2xl font-bold text-[var(--text-primary)]">{missingCount}</div>
-                  <div className="text-sm text-[var(--text-muted)]">Missing</div>
-                </div>
-              </div>
-            </div>
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <AlertTriangle size={24} className="text-[var(--warning)]" />
-                <div>
-                  <div className="text-2xl font-bold text-[var(--text-primary)]">{warnCount}</div>
-                  <div className="text-sm text-[var(--text-muted)]">Warnings</div>
-                </div>
-              </div>
-            </div>
+        <form onSubmit={submit} className="flex flex-col gap-5">
+          <div>
+            <label className="matcha-label" htmlFor="role">Describe your ideal role</label>
+            <input
+              id="role"
+              className="matcha-input"
+              placeholder="e.g. Senior Python backend engineer at a remote-first fintech"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              disabled={isRunning}
+              autoFocus
+            />
           </div>
 
-          <div className="card">
-            <div className="flex items-center gap-3 mb-4">
-              <BarChart3 size={24} className="text-[var(--accent)]" />
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-                Current Tier: {tierLabel}
-              </h3>
-            </div>
-            <p className="text-[var(--text-secondary)]">
-              Your system is configured at Tier {tier}. {missingCount > 0 ? `${missingCount} configuration items need attention.` : "All systems operational."}
-            </p>
+          <div>
+            <label className="matcha-label" htmlFor="location">Location (optional)</label>
+            <input
+              id="location"
+              className="matcha-input"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              disabled={isRunning}
+            />
           </div>
 
-          {doctorChecks.length > 0 && (
-            <div className="card">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Health Check Summary</h3>
-              <div className="space-y-2">
-                {doctorChecks.map((check, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
-                    <span className="text-[var(--text-secondary)]">{check.name}</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      check.status === "ok" ? "bg-[var(--success)]/20 text-[var(--success)]" :
-                      check.status === "missing" ? "bg-[var(--danger)]/20 text-[var(--danger)]" :
-                      check.status === "warn" ? "bg-[var(--warning)]/20 text-[var(--warning)]" :
-                      "bg-[var(--text-muted)]/20 text-[var(--text-muted)]"
-                    }`}>
-                      {check.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+          <div>
+            <label className="matcha-label" htmlFor="username">Your username (optional)</label>
+            <input
+              id="username"
+              className="matcha-input"
+              placeholder="anonymous"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={isRunning}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mt-1">
+            <button type="submit" className="matcha-btn" disabled={isRunning || !role.trim()}>
+              {isRunning ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+              {isRunning ? "Matching…" : "Find my roles"}
+            </button>
+            {!isRunning && todayCount > 0 && (
+              <button type="button" className="matcha-btn matcha-btn-ghost" onClick={() => router.push("/review")}>
+                Review today&apos;s {todayCount} jobs
+              </button>
+            )}
+          </div>
+        </form>
+
+        {statusMsg && (
+          <div className="matcha-status">
+            <Loader2 size={16} className={isRunning ? "animate-spin" : "hidden"} />
+            <span>{statusMsg}</span>
+          </div>
+        )}
+
+        <p className="matcha-note">
+          Covers LinkedIn, Indeed, Eluta, Job Bank, Talent.com, RemoteOK, WeWorkRemotely,
+          and 10k+ remote startup boards. Matches are saved to a dated, timestamped file.
+        </p>
+      </div>
     </div>
   );
 }
