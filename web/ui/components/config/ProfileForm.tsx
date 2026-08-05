@@ -28,7 +28,8 @@ const sections: ProfileSection[] = [
     title: "Personal Information",
     key: "personal",
     fields: [
-      { key: "name", label: "Full Name" },
+      { key: "full_name", label: "Full Name" },
+      { key: "preferred_name", label: "Preferred Name" },
       { key: "email", label: "Email" },
       { key: "phone", label: "Phone" },
       { key: "linkedin_url", label: "LinkedIn URL" },

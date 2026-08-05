@@ -77,6 +77,9 @@ def save_env_config(data: dict) -> dict:
         env_key = key.upper()
         if value is not None and value != "":
             existing[env_key] = f"{env_key}={value}"
+        else:
+            # Empty/None value removes the key from the env file
+            existing.pop(env_key, None)
 
     env_content = "\n".join(existing.values()) + "\n"
     ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
